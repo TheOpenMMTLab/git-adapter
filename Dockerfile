@@ -8,9 +8,9 @@ WORKDIR /app
 
 # Skript kopieren
 COPY get.sh .
+COPY put.sh .
 
 # Skript ausführbar machen
 RUN chmod +x get.sh
-
-ENTRYPOINT ["./get.sh"]
+RUN chmod +x put.sh
 
