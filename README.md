@@ -1,5 +1,5 @@
 
-# get-artifact-from-git
+# git-adapter
 
 This project provides simple shell scripts to fetch files from and push files to a remote Git repository. It is designed for automation and CI/CD pipelines, supporting Overleaf and other Git-based services.
 
@@ -46,7 +46,7 @@ This project provides simple shell scripts to fetch files from and push files to
 ## Build Docker Image
 
 ```bash
-docker build -t frittenburger/mmut-git-adapter:dev .
+docker build -t frittenburger/git-adapter:dev .
 ```
 
 ---
