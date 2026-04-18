@@ -1,0 +1,5 @@
+.env
+test1-no-token.sh
+test2-with-env-token.sh
+test1-words-alpha.txt
+test2-_inhalte.tex

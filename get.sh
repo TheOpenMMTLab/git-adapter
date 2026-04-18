@@ -10,19 +10,15 @@ while [[ "$#" -gt 0 ]]; do
         --repo) REPO_URL="$2"; shift ;;
         --input-path) INPUT_PATH="$2"; shift ;;
         --output-path) OUTPUT_PATH="$2"; shift ;;
+        --ref) REF="$2"; shift ;;
         *) echo "Unbekannter Parameter: $1"; exit 1 ;;
     esac
     shift
 done
 
 if [ -z "$REPO_URL" ] || [ -z "$INPUT_PATH" ] || [ -z "$OUTPUT_PATH" ]; then
-    echo "Benutzung: get.sh --repo <repo-url> --input-path <pfad> --output-path <pfad>"
+    echo "Benutzung: get.sh --repo <repo-url> --input-path <pfad> --output-path <pfad> [--ref <commit|tag|branch>]"
     exit 1
-fi
-
-if [ -z "$GIT_TOKEN" ]; then
-    echo "Fehler: GIT_TOKEN Umgebungsvariable nicht gesetzt."
-    exit 2
 fi
 
 # --- Temp-Verzeichnis ---
@@ -30,14 +26,34 @@ TMP_DIR="/tmp/repo_$(date +%s)"
 mkdir -p "$TMP_DIR"
 
 # --- Klonen ---
-# Entfernt https:// und optionales git@ aus der URL
-CLEAN_REPO_URL="${REPO_URL/https:\/\/git@/}"
-CLEAN_REPO_URL="${CLEAN_REPO_URL/https:\/\//}"
+if [ -n "$GIT_TOKEN" ]; then
+    # Token nicht in die URL schreiben (Sonderzeichen), sondern per HTTP Header senden.
+    CLEAN_REPO_URL="${REPO_URL#https://git@}"
+    CLEAN_REPO_URL="${CLEAN_REPO_URL#https://}"
+    FULL_REPO_URL="https://${CLEAN_REPO_URL}"
+    AUTH_B64="$(printf 'git:%s' "$GIT_TOKEN" | base64 | tr -d '\r\n')"
+    echo "Klone Repository mit Token..."
+else
+    FULL_REPO_URL="$REPO_URL"
+    echo "Klone Repository ohne Token..."
+fi
 
-FULL_REPO_URL="https://git:${GIT_TOKEN}@${CLEAN_REPO_URL}"
-
-echo "Klone Repository..."
-git clone --depth 1 "$FULL_REPO_URL" "$TMP_DIR"
+if [ -n "$REF" ]; then
+    # Full clone to reliably allow checkout of arbitrary commit/tag/branch.
+    if [ -n "$GIT_TOKEN" ]; then
+        git -c "http.extraHeader=Authorization: Basic $AUTH_B64" clone "$FULL_REPO_URL" "$TMP_DIR"
+    else
+        git clone "$FULL_REPO_URL" "$TMP_DIR"
+    fi
+    echo "Wechsle auf Ref: $REF"
+    git -C "$TMP_DIR" checkout "$REF"
+else
+    if [ -n "$GIT_TOKEN" ]; then
+        git -c "http.extraHeader=Authorization: Basic $AUTH_B64" clone --depth 1 "$FULL_REPO_URL" "$TMP_DIR"
+    else
+        git clone --depth 1 "$FULL_REPO_URL" "$TMP_DIR"
+    fi
+fi
 
 # --- Datei kopieren ---
 echo "Kopiere Datei..."
