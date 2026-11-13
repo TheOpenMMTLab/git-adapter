@@ -55,9 +55,22 @@ else
     fi
 fi
 
-# --- Datei kopieren ---
-echo "Kopiere Datei..."
-cp "$TMP_DIR/$INPUT_PATH" "$OUTPUT_PATH"
+# --- Datei oder Verzeichnis kopieren ---
+SOURCE_PATH="$TMP_DIR/$INPUT_PATH"
+if [ -f "$SOURCE_PATH" ]; then
+    echo "Kopiere Datei..."
+    cp "$SOURCE_PATH" "$OUTPUT_PATH"
+elif [ -d "$SOURCE_PATH" ]; then
+    if [ ! -d "$OUTPUT_PATH" ]; then
+        echo "Fehler: Output-Pfad muss für ein Quellverzeichnis bereits existieren: $OUTPUT_PATH" >&2
+        exit 1
+    fi
+    echo "Kopiere Inhalt des Verzeichnisses..."
+    cp -R "$SOURCE_PATH/." "$OUTPUT_PATH/"
+else
+    echo "Fehler: Quellpfad ist weder eine Datei noch ein Verzeichnis: $SOURCE_PATH" >&2
+    exit 1
+fi
 
 # --- Aufräumen ---
 echo "Lösche Repository..."
